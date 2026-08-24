@@ -72,8 +72,8 @@ PULSOS_VOLTA = 550
 
 # velocidades
 
-VEL_MIN = 0.4
-VEL_MED = 0.7
+VEL_MIN = 0.3
+VEL_MED = 0.5
 VEL_MAX = 1.0
 
 # PID encoder
