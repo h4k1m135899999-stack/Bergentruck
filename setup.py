@@ -21,8 +21,8 @@ try:
         )
 
         motorR = Motor(
-            forward=22,
-            backward=27, # a testar
+            forward=27,
+            backward=22, # a testar
             enable=17,
         )
 
