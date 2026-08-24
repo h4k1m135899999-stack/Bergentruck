@@ -49,6 +49,7 @@ try:
 except Exception:
     # Ambiente sem GPIO (ex.: calibrar visão no PC).
     Motor = Servo = RotaryEncoder = None
+    botao = None
     motorL = motorR = None
     encoderL_a = encoderL_b = None
     encoderR_a = encoderR_b = None
