@@ -6,27 +6,31 @@ import warnings
 try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        from gpiozero import Motor, Servo, RotaryEncoder
+        from gpiozero import Motor, Servo, RotaryEncoder, Button
+
+        # botão
+
+        botao = Button(2) #certo
 
         # ponte H
 
         motorL = Motor(
             forward=10,
-            backward=9,
+            backward=9, # a testar
             enable=11,
         )
 
         motorR = Motor(
             forward=22,
-            backward=27,
+            backward=27, # a testar
             enable=17,
         )
 
         # servos
 
-        servo_claw = Servo(3)
-        servo_lift = Servo(4)
-        servo_dump = Servo(5)
+        servo_claw = Servo(5) #se não tiver certo, troca com o de baixo
+        servo_lift = Servo(4) #se não tiver certo, troca com o de cima
+        servo_dump = Servo(3) #certo
 
     # utilização
     # motorR.forward()

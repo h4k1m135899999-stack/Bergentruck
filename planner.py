@@ -110,12 +110,12 @@ class Start(Estado):
     ID = EstadoID.START
 
     def entrar(self):
-
-        self.planner.log("Inicializando")
+        self.planner.log("Inicializando\n Pode apertar o botão")
 
     def executar(self):
-
-        self.planner.mudar_estado(SeguirLinha)
+        if self.robo.botao_pressionado:
+            self.planner.log("Botão apertado com sucesso")
+            self.planner.mudar_estado(SeguirLinha)
 
 
 class SeguirLinha(Estado):

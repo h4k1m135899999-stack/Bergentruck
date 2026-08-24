@@ -15,6 +15,10 @@ class Robo:
 
     def __init__(self):
 
+        # Botão
+
+        self.botao = setup.botao
+
         # Motores
 
         self.motorL = setup.motorL
@@ -110,6 +114,8 @@ class Robo:
         self._inicio_recuperacao_linha = None
         self._frames_obstaculo = 0
         self._movimento = None
+
+        self.botao_pressionado = False
 
     
     def atualizar(self):
@@ -621,6 +627,11 @@ class Robo:
 
         return a
     
+    def iniciar(self):
+        self.botao.when_pressed = self._botao_pressionado
+
+    def _botao_pressionado(self):
+        self.botao_pressionado = True
 
     def set_motores(self, velL, velR):
 
