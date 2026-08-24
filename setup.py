@@ -6,7 +6,7 @@ import warnings
 try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        from gpiozero import Motor, Servo, RotaryEncoder, Button
+        from gpiozero import Motor, Servo, Button
 
         # botão
 
@@ -48,7 +48,7 @@ try:
 
 except Exception:
     # Ambiente sem GPIO (ex.: calibrar visão no PC).
-    Motor = Servo = RotaryEncoder = None
+    Motor = Servo = None
     botao = None
     motorL = motorR = None
     encoderL_a = encoderL_b = None
