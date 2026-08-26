@@ -65,7 +65,7 @@ angulo_garra = 45
 # odometria
 
 RAIO_RODA = 32.5
-DISTANCIA_RODAS = 166
+DISTANCIA_RODAS = 180
 # NECESSITA CALIBRAÇÃO FÍSICA: pulsos por volta completa da roda no modo
 # atual do Encoder (canal A em borda de subida, sem quadrature x4).
 PULSOS_VOLTA = 550
@@ -73,12 +73,12 @@ PULSOS_VOLTA = 550
 # velocidades
 
 VEL_MIN = 0.3
-VEL_MED = 0.6
+VEL_MED = 0.4
 VEL_MAX = 1.0
 
 # PID encoder
 
-KP_E = 0.005
+KP_E = 0.01
 KI_E = 0
 KD_E = 0
 

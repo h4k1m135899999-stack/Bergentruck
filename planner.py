@@ -133,7 +133,7 @@ class SeguirLinha(Estado):
 
         evento = self.robo.evento()
 
-
+        '''
         if evento == Evento.PRATA:
 
             self.planner.mudar_estado(EntrarResgate)
@@ -147,7 +147,7 @@ class SeguirLinha(Estado):
 
             self.planner.mudar_estado(Desviar)
             return
-
+        '''
         if evento == Evento.INTERSECAO:
 
             self.planner.mudar_estado(Intersecao)
