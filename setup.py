@@ -78,7 +78,7 @@ VEL_MAX = 1.0
 
 # PID encoder
 
-KP_E = 0.01
+KP_E = 0.005
 KI_E = 0
 KD_E = 0
 
@@ -87,6 +87,8 @@ PESO_ERRO_POS = 0.5
 PESO_LOOKAHEAD = 0.5
 
 CONTROLE_DT_MIN_S = 0.005
+# Intervalo entre mensagens de telemetria. Não altera o controle dos motores.
+TELEMETRIA_INTERVALO_S = 0.5
 LINHA_FRAMES_REDUZIR = 3
 LINHA_FRAMES_RECUPERAR = 12
 TEMPO_MAX_RECUPERAR_LINHA_S = 6.0
@@ -136,11 +138,11 @@ TEMPO_MAX_DESVIO_S = 12.0
 
 # PID linha
 
-KP_L = 0.005
+KP_L = 0.01
 KI_L = 0
 KD_L = 0
 
 # Camera (vision_tuner / Vision)
-CAMERA_ID = 0
+CAMERA_ID = 1
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480

@@ -114,6 +114,7 @@ class Robo:
         self._inicio_recuperacao_linha = None
         self._frames_obstaculo = 0
         self._movimento = None
+        self._comando_motores = (0.0, 0.0)
 
         self.botao_pressionado = False
 
@@ -635,6 +636,10 @@ class Robo:
 
     def set_motores(self, velL, velR):
 
+        # Guarda o último comando para a telemetria. Os valores vão de -1
+        # (ré) a 1 (frente) e representam exatamente o que foi enviado.
+        self._comando_motores = (velL, velR)
+
         if velL >= 0:
             self.motorL.forward(velL)
         else:
@@ -747,6 +752,29 @@ class Robo:
         vel_L, vel_R = self._corrigir_vel_linha(vel)
 
         self.set_motores(vel_L, vel_R)
+
+    def status_linha(self):
+        """Resumo legível do acompanhamento da linha no frame atual."""
+        if not self.tem_linha() or self.vision.center_error is None:
+            lado = "desconhecido"
+            deslocamento = 0.0
+            leitura = "não encontrei a linha"
+        else:
+            erro = self.vision.center_error
+            deslocamento = abs(erro) * 100
+            if abs(erro) < 0.05:
+                lado = "no centro"
+            elif erro < 0:
+                lado = "à esquerda"
+            else:
+                lado = "à direita"
+            leitura = f"linha {lado} ({deslocamento:.0f}% da largura da câmera)"
+
+        vel_l, vel_r = self._comando_motores
+        return (
+            f"Lendo linha: {leitura}. Objetivo: centralizar a linha; "
+            f"motores E={vel_l:+.2f}, D={vel_r:+.2f}."
+        )
 
     def recuperar_linha(self):
         """Busca limitada; devolve False após timeout para o Planner parar."""

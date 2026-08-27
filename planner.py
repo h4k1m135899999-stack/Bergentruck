@@ -70,6 +70,8 @@ class Planner:
 
         self.estado = Start(self)
 
+        self._ultimo_status = 0.0
+
         self.estado.entrar()
 
 
@@ -96,6 +98,14 @@ class Planner:
     def tempo_estado(self):
 
         return time.time() - self.contexto.inicio_estado
+
+    def telemetria_linha(self):
+        """Mostra o que o robô está fazendo sem poluir o terminal a cada frame."""
+        agora = time.monotonic()
+        if agora - self._ultimo_status < setup.TELEMETRIA_INTERVALO_S:
+            return
+        self._ultimo_status = agora
+        self.log(self.robo.status_linha())
 
 
     def log(self, texto):
@@ -130,6 +140,7 @@ class SeguirLinha(Estado):
     def executar(self):
 
         self.robo.seguir_linha()
+        self.planner.telemetria_linha()
 
         evento = self.robo.evento()
 
