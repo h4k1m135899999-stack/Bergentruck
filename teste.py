@@ -7,7 +7,7 @@ while True:
 
     #robo.girar(90)
 
-    robo.set_motores(1,0)
+    robo.set_motores(0.3,0.3)
 
     #robo.set_motores(0,1)
 
