@@ -82,9 +82,9 @@ KP_E = 0.005
 KI_E = 0
 KD_E = 0
 
-PESO_ERRO_POS = 0.5
+PESO_ERRO_POS = 0.8
 # center_error agora é normalizado em [-1, 1]; heading permanece em radianos.
-PESO_LOOKAHEAD = 0.5
+PESO_LOOKAHEAD = 0.3
 
 CONTROLE_DT_MIN_S = 0.005
 # Intervalo entre mensagens de telemetria. Não altera o controle dos motores.
