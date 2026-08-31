@@ -19,7 +19,7 @@ class ObjectDetector:
         # verde
 
         self.green_low = np.array(
-            [25, 40, 40]
+            [35, 50, 40]
         )
 
         self.green_high = np.array(

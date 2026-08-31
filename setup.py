@@ -142,7 +142,30 @@ KP_L = 0.01
 KI_L = 0
 KD_L = 0
 
+# Limiares de erro para seguimento de linha (em porcentagem da largura da câmera)
+ERRO_LINHA_PEQUENO = 0.15      # Até 15% da largura: correção suave
+ERRO_LINHA_MEDIO = 0.35        # Até 35%: correção agressiva
+ERRO_LINHA_GRANDE = 0.55       # Acima de 35%: pivot turn
+ERRO_LINHA_CRITICO = 0.75      # Acima de 75%: linha quase perdida
+
+# Histerese para evitar oscilações entre modos
+HISTERESE_PIVOT = 0.10         # Reduz limiar de saída do pivot em 10%
+
+# Velocidades base para cada modo
+VEL_CORRECAO_SUAVE = 0.9       # Multiplicador da velocidade em erro pequeno
+VEL_CORRECAO_AGRESSIVA = 0.6   # Multiplicador em erro médio
+VEL_PIVOT_MIN = 0.25           # Velocidade mínima do pivot
+VEL_PIVOT_MAX = 0.60           # Velocidade máxima do pivot
+
+# Ganhos para erro combinado
+PESO_ERRO_POS_PIVOT = 1.2      # Aumenta peso do erro posicional no pivot
+PESO_HEADING_PIVOT = 0.8       # Reduz peso do heading no pivot
+
+# Limites de segurança
+VEL_MAX_MOTOR = 1.0            # Máximo absoluto (já existente)
+VEL_MIN_MOTOR = 0.0            # Mínimo absoluto (já existente)
+
 # Camera (vision_tuner / Vision)
-CAMERA_ID = 0
+CAMERA_ID = 1
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
