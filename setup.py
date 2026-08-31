@@ -143,6 +143,6 @@ KI_L = 0
 KD_L = 0
 
 # Camera (vision_tuner / Vision)
-CAMERA_ID = 1
+CAMERA_ID = 0
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
