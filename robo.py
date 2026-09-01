@@ -118,8 +118,6 @@ class Robo:
 
         self.botao_pressionado = False
 
-        self._ultimo_modo_linha = "suave"
-
     
     def atualizar(self):
         # Um único ciclo é dono da leitura de sensores e da visão.
@@ -604,116 +602,21 @@ class Robo:
 
     
     def _corrigir_vel_linha(self, vel=setup.VEL_MED):
-        # Verifica se há linha visível
-        if not self.tem_linha():
-            # Se linha perdida, usa último erro conhecido
-            erro_abs = abs(self._ultimo_erro_linha)
-        else:
-            erro_abs = abs(self.vision.center_error)
-        
-        # Detecta modo de operação com histerese
-        modo = self._determinar_modo_linha(erro_abs)
-        
-        if modo == "suave":
-            return self._correcao_suave(vel)
-        elif modo == "agressivo":
-            return self._correcao_agressiva(vel)
-        elif modo == "pivot":
-            return self._correcao_pivot()
-        else:  # crítico
-            return self._correcao_critica()
+        # Um PID só, sem degraus: o próprio ganho leva de arco suave a quase-pivô.
+        baseL, baseR = self._corrigir_vel(vel)   # encoders + atualiza _controle_dt
 
-    def _determinar_modo_linha(self, erro_abs):
-        """Determina modo de operação com histerese para evitar oscilações."""
-        # Verifica se já está em modo pivot
-        if self._ultimo_modo_linha == "pivot":
-            # Histerese: sai do pivot com limiar menor
-            if erro_abs < setup.ERRO_LINHA_GRANDE - setup.HISTERESE_PIVOT:
-                return self._classificar_erro_linha(erro_abs)
-            else:
-                return "pivot"
-        else:
-            return self._classificar_erro_linha(erro_abs)
-
-    def _classificar_erro_linha(self, erro_abs):
-        """Classifica o erro em categorias de correção."""
-        if erro_abs < setup.ERRO_LINHA_PEQUENO:
-            return "suave"
-        elif erro_abs < setup.ERRO_LINHA_MEDIO:
-            return "agressivo"
-        elif erro_abs < setup.ERRO_LINHA_GRANDE:
-            return "pivot"
-        else:
-            return "critico"
-
-    def _correcao_suave(self, vel):
-        """Correção suave para erros pequenos."""
-        baseL, baseR = self._corrigir_vel(vel * setup.VEL_CORRECAO_SUAVE)
-        
         erro = self.erro_linha * setup.PESO_ERRO_POS + self.vision.heading * setup.PESO_LOOKAHEAD
         correcao = self._pid_linha.atualizar(erro, self._controle_dt)
-        
-        velL = baseL - correcao
-        velR = baseR + correcao
-        
-        return self._limitar_velocidades(velL, velR)
 
-    def _correcao_agressiva(self, vel):
-        """Correção agressiva para erros médios."""
-        baseL, baseR = self._corrigir_vel(vel * setup.VEL_CORRECAO_AGRESSIVA)
-        
-        # Aumenta ganho do PID para correção mais forte
-        erro = self.erro_linha * (setup.PESO_ERRO_POS * 1.5) + self.vision.heading * setup.PESO_LOOKAHEAD
-        correcao = self._pid_linha.atualizar(erro, self._controle_dt)
-        
-        velL = baseL - correcao
-        velR = baseR + correcao
-        
-        return self._limitar_velocidades(velL, velR)
+        # desacelera continuamente conforme o erro (substitui os "modos")
+        fator = 1.0 - 0.55 * min(1.0, abs(erro))
+        velL = baseL * fator + setup.SENTIDO_CORRECAO * correcao
+        velR = baseR * fator - setup.SENTIDO_CORRECAO * correcao
 
-    def _correcao_pivot(self):
-        """Pivot turn para erros grandes."""
-        # Determina direção do pivot baseado no erro
-        if self.erro_linha > 0:  # linha à direita
-            # Motor esquerdo para frente, direito para trás
-            velL = self._calcular_vel_pivot(abs(self.erro_linha))
-            velR = -velL
-        else:  # linha à esquerda
-            # Motor direito para frente, esquerdo para trás
-            velR = self._calcular_vel_pivot(abs(self.erro_linha))
-            velL = -velR
-        
-        self._ultimo_modo_linha = "pivot"
-        return velL, velR
-
-    def _correcao_critica(self):
-        """Correção crítica para linha quase perdida."""
-        # Usa último erro conhecido para determinar direção
-        if self._ultimo_erro_linha >= 0:
-            # Linha estava à direita
-            velL = setup.VEL_PIVOT_MAX
-            velR = -setup.VEL_PIVOT_MAX
-        else:
-            # Linha estava à esquerda
-            velL = -setup.VEL_PIVOT_MAX
-            velR = setup.VEL_PIVOT_MAX
-        
-        self._ultimo_modo_linha = "pivot"
-        return velL, velR
-
-    def _calcular_vel_pivot(self, erro_abs):
-        """Calcula velocidade do pivot proporcional ao erro."""
-        # Normaliza erro entre ERRO_LINHA_GRANDE e ERRO_LINHA_CRITICO
-        erro_normalizado = (erro_abs - setup.ERRO_LINHA_GRANDE) / (setup.ERRO_LINHA_CRITICO - setup.ERRO_LINHA_GRANDE)
-        erro_normalizado = max(0, min(1, erro_normalizado))
-        
-        # Interpola entre VEL_PIVOT_MIN e VEL_PIVOT_MAX
-        return setup.VEL_PIVOT_MIN + erro_normalizado * (setup.VEL_PIVOT_MAX - setup.VEL_PIVOT_MIN)
-
-    def _limitar_velocidades(self, velL, velR):
-        """Garante que velocidades estejam dentro dos limites do hardware."""
-        velL = max(setup.VEL_MIN_MOTOR, min(setup.VEL_MAX_MOTOR, velL))
-        velR = max(setup.VEL_MIN_MOTOR, min(setup.VEL_MAX_MOTOR, velR))
+        # roda interna pode ficar levemente NEGATIVA: curva fechada vira
+        # quase-pivô de forma contínua, sem o salto do modo pivot
+        velL = max(-0.30, min(1.0, velL))
+        velR = max(-0.30, min(1.0, velR))
         return velL, velR
 
 
@@ -843,12 +746,16 @@ class Robo:
 
         self.parar()
 
-    def seguir_linha(self, vel = setup.VEL_MED):
+    def seguir_linha(self, vel=setup.VEL_MED):
         if not self.tem_linha():
+            # Perdeu com erro GRANDE = curva fechada: gira já em direção ao erro.
+            # Perdeu com erro pequeno = gap (regra OBR: gap é em reta): atravessa reto.
+            if abs(self._ultimo_erro_linha) >= setup.ERRO_PERDIDA_GIRA:
+                return self.recuperar_linha()
             if self._frames_sem_linha >= setup.LINHA_FRAMES_RECUPERAR:
                 return self.recuperar_linha()
             vel *= 0.45 if self._frames_sem_linha >= setup.LINHA_FRAMES_REDUZIR else 0.7
-        
+
         vel_L, vel_R = self._corrigir_vel_linha(vel)
         self.set_motores(vel_L, vel_R)
 
@@ -1049,5 +956,3 @@ class Curva(Enum):
     DIREITA = auto()
 
     RETORNO = auto()
-
-    

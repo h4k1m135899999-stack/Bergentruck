@@ -158,13 +158,13 @@ class LineDetector:
             if area < max(80, w * h * 0.001):
                 continue
             x, y, cw, ch = cv2.boundingRect(contour)
-            toca_base = y + ch >= int(h * 0.78)
+            toca_base = y + ch >= int(h * 0.65) # era 0.78: na curva fechada a linha
             M = cv2.moments(contour)
             centro = M["m10"] / M["m00"] if M["m00"] else x + cw / 2
             continuidade = 1.0 if self.last_center is None else max(0.0, 1 - abs(centro - self.last_center) / (w * 0.5))
             orientacao = min(ch / max(cw, 1), 2.0) / 2.0
             score = area / (w * h) * 2 + continuidade + orientacao + (0.8 if toca_base else 0)
-            if toca_base or continuidade > 0.75:
+            if toca_base or continuidade > 0.55:     # era 0.75
                 candidatos.append((score, contour, centro))
         if not candidatos:
             self.missed_frames += 1

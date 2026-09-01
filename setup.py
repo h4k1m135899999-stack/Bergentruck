@@ -82,10 +82,6 @@ KP_E = 0.005
 KI_E = 0
 KD_E = 0
 
-PESO_ERRO_POS = 0.8
-# center_error agora é normalizado em [-1, 1]; heading permanece em radianos.
-PESO_LOOKAHEAD = 0.3
-
 CONTROLE_DT_MIN_S = 0.005
 # Intervalo entre mensagens de telemetria. Não altera o controle dos motores.
 TELEMETRIA_INTERVALO_S = 0.5
@@ -136,35 +132,19 @@ AVANCO_SAIDA_LINHA_MM = 50.0
 AVANCO_MAX_DESVIO_MM = 400.0
 TEMPO_MAX_DESVIO_S = 12.0
 
-# PID linha (ajustado para comportamento suave)
-KP_L = 0.004    # Reduzido de 0.01 (menos agressivo)
-KI_L = 0        # Mantido em 0
-KD_L = 0.0015   # Adicionado para amortecer oscilações
+# PID linha — escala real: erro combinado ~[-1, 1]; a correção precisa
+# chegar perto da velocidade base. KP=0.004 dava 0.0009 (0.6% da base).
+KP_L = 0.50        # comece aqui; suba se ainda cortar curva por fora
+KI_L = 0.0
+KD_L = 0.10        # amortece; se tremer na reta, reduza
 
-# Pesos para erro combinado (posição + heading)
-PESO_ERRO_POS = 0.70    # Erro posicional continua dominante
-PESO_LOOKAHEAD = 0.10   # Heading com menos influência
+PESO_ERRO_POS = 0.70
+PESO_LOOKAHEAD = 0.35   # heading em rad (~±0.9): antecipa a curva
 
-# Limiares de erro para seguimento de linha (em porcentagem da largura da câmera)
-ERRO_LINHA_PEQUENO = 0.20      # Até 12%: correção suave
-ERRO_LINHA_MEDIO = 0.45        # Até 30%: correção moderada
-ERRO_LINHA_GRANDE = 0.70       # Até 65%: correção agressiva
-ERRO_LINHA_CRITICO = 0.85      # Acima de 80%: linha quase perdida
-
-# Histerese para evitar oscilações entre modos
-HISTERESE_PIVOT = 0.20         # Reduz limiar de saída do pivot em 15%
-
-# Velocidades base para cada modo
-VEL_CORRECAO_SUAVE = 1.00      # Multiplicador da velocidade em erro pequeno
-VEL_CORRECAO_AGRESSIVA = 0.80  # Multiplicador em erro médio
-VEL_PIVOT_MIN = 0.15           # Velocidade mínima do pivot
-VEL_PIVOT_MAX = 0.35           # Velocidade máxima do pivot
-
-# Limites de segurança
-VEL_MAX_MOTOR = 1.0            # Máximo absoluto
-VEL_MIN_MOTOR = 0.0            # Mínimo absoluto
+SENTIDO_CORRECAO = 1     # -1 se o teste de direção mostrar fugindo da linha
+ERRO_PERDIDA_GIRA = 0.40 # perdeu linha com erro >= isso: é curva, gira JÁ
 
 # Camera (vision_tuner / Vision)
-CAMERA_ID = 0
+CAMERA_ID = 1
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
