@@ -73,7 +73,7 @@ PULSOS_VOLTA = 550
 # velocidades
 
 VEL_MIN = 0.1
-VEL_MED = 0.15
+VEL_MED = 0.13
 VEL_MAX = 0.3
 
 # PID encoder
@@ -134,9 +134,9 @@ TEMPO_MAX_DESVIO_S = 12.0
 
 # PID linha — escala real: erro combinado ~[-1, 1]; a correção precisa
 # chegar perto da velocidade base. KP=0.004 dava 0.0009 (0.6% da base).
-KP_L = 0.50        # comece aqui; suba se ainda cortar curva por fora
+KP_L = 0.35        # comece aqui; suba se ainda cortar curva por fora
 KI_L = 0.0
-KD_L = 0.10        # amortece; se tremer na reta, reduza
+KD_L = 0.05        # amortece; se tremer na reta, reduza
 
 PESO_ERRO_POS = 0.70
 PESO_LOOKAHEAD = 0.35   # heading em rad (~±0.9): antecipa a curva
