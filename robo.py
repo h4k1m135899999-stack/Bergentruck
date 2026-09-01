@@ -116,17 +116,21 @@ class Robo:
         self._movimento = None
         self._comando_motores = (0.0, 0.0)
 
+        self._erro_filtrado = None
+        self._fps = 0.0
+
         self.botao_pressionado = False
 
     
     def atualizar(self):
-        # Um único ciclo é dono da leitura de sensores e da visão.
-        self.odom.atualizar(
-            self.encoderL.ler(),
-            self.encoderR.ler()
-        )
+        t0 = time.monotonic()
+        self.odom.atualizar(self.encoderL.ler(), self.encoderR.ler())
         self.vision.update()
         self.atualizar_memoria()
+        dt = time.monotonic() - t0
+        if dt > 0:
+            inst = 1.0 / dt
+            self._fps = inst if self._fps == 0.0 else 0.9 * self._fps + 0.1 * inst
 
 
     def atualizar_memoria(self):
@@ -134,6 +138,9 @@ class Robo:
         self.memoria["ultima_curva"] = self.curva_detectada()
 
         if self.tem_linha() and self.vision.center_error is not None:
+            if self._frames_sem_linha > 0:
+                self._pid_linha.reset()
+                self._erro_filtrado = None
             self._ultimo_erro_linha = self.vision.center_error
             self._frames_sem_linha = 0
             self._inicio_recuperacao_linha = None
@@ -574,49 +581,57 @@ class Robo:
         self.parar()
 
     
-    def _corrigir_vel(self, vel=setup.VEL_MED):
+    def _corrigir_vel(self, vel=setup.VEL_MED, teto_correcao=0.35):
         agora = time.monotonic()
         dt = agora - self._controle_anterior
         self._controle_anterior = agora
         self._controle_dt = dt
+
         atual_L = self.encoderL.ler()
         atual_R = self.encoderR.ler()
-
         delta_L = atual_L - self.ant_L
         delta_R = atual_R - self.ant_R
-
         self.ant_L = atual_L
         self.ant_R = atual_R
 
-        erro = delta_L - delta_R
-        
+        # ANTES: pulsos por LOOP -> o ganho variava com o tempo de visão.
+        # AGORA: pulsos por segundo -> ganho estável em qualquer FPS.
+        erro = (delta_L - delta_R) / dt if dt > 0 else 0.0
+
         correcao = self._pid_encoder.atualizar(erro, dt)
+        correcao = max(-teto_correcao, min(teto_correcao, correcao))
 
-        vel_L = vel - correcao
-        vel_R = vel + correcao
-
-        vel_L = max(0, min(1, vel_L))
-        vel_R = max(0, min(1, vel_R))
-
+        vel_L = max(0.0, min(1.0, vel - correcao))
+        vel_R = max(0.0, min(1.0, vel + correcao))
         return vel_L, vel_R
 
     
     def _corrigir_vel_linha(self, vel=setup.VEL_MED):
-        # Um PID só, sem degraus: o próprio ganho leva de arco suave a quase-pivô.
-        baseL, baseR = self._corrigir_vel(vel)   # encoders + atualiza _controle_dt
+        # encoders primeiro (define _controle_dt) — mas como TRIM pequeno:
+        # capado em ±0.03, ele alinha as rodas na reta sem ter autoridade
+        # para brigar com a curva que o PID da linha pede
+        baseL, baseR = self._corrigir_vel(vel, teto_correcao=setup.TRIM_ENCODER_MAX)
 
+        # erro combinado + filtro: ruído de visão não entra mais no controlador
         erro = self.erro_linha * setup.PESO_ERRO_POS + self.vision.heading * setup.PESO_LOOKAHEAD
-        correcao = self._pid_linha.atualizar(erro, self._controle_dt)
+        if self._erro_filtrado is None:
+            self._erro_filtrado = erro
+        self._erro_filtrado += setup.FILTRO_ERRO_ALFA * (erro - self._erro_filtrado)
 
-        # desacelera continuamente conforme o erro (substitui os "modos")
-        fator = 1.0 - 0.55 * min(1.0, abs(erro))
+        correcao = self._pid_linha.atualizar(self._erro_filtrado, self._controle_dt)
+
+        # teto RELATIVO à velocidade: qualquer que seja o VEL_MED, o giro
+        # nunca vira pivô por engano
+        corr_max = setup.GIRO_MAX_FRAC * vel
+        correcao = max(-corr_max, min(corr_max, correcao))
+
+        fator = 1.0 - setup.FRENO_CURVA_FRAC * min(1.0, abs(self._erro_filtrado))
         velL = baseL * fator + setup.SENTIDO_CORRECAO * correcao
         velR = baseR * fator - setup.SENTIDO_CORRECAO * correcao
 
-        # roda interna pode ficar levemente NEGATIVA: curva fechada vira
-        # quase-pivô de forma contínua, sem o salto do modo pivot
-        velL = max(-0.30, min(1.0, velL))
-        velR = max(-0.30, min(1.0, velR))
+        # piso também relativo: roda interna pode ir levemente para trás
+        velL = max(-0.25 * vel, min(1.0, velL))
+        velR = max(-0.25 * vel, min(1.0, velR))
         return velL, velR
 
 
@@ -780,6 +795,7 @@ class Robo:
         return (
             f"Lendo linha: {leitura}. Objetivo: centralizar a linha; "
             f"motores E={vel_l:+.2f}, D={vel_r:+.2f}."
+            f" fps={self._fps:.1f}."
         )
 
     def recuperar_linha(self):

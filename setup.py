@@ -73,12 +73,12 @@ PULSOS_VOLTA = 550
 # velocidades
 
 VEL_MIN = 0.1
-VEL_MED = 0.13
+VEL_MED = 0.15
 VEL_MAX = 0.3
 
 # PID encoder
 
-KP_E = 0.005
+KP_E = 0.001
 KI_E = 0
 KD_E = 0
 
@@ -134,12 +134,18 @@ TEMPO_MAX_DESVIO_S = 12.0
 
 # PID linha — escala real: erro combinado ~[-1, 1]; a correção precisa
 # chegar perto da velocidade base. KP=0.004 dava 0.0009 (0.6% da base).
-KP_L = 0.35        # comece aqui; suba se ainda cortar curva por fora
+KP_L = 0.25        # comece aqui; suba se ainda cortar curva por fora
 KI_L = 0.0
 KD_L = 0.05        # amortece; se tremer na reta, reduza
 
 PESO_ERRO_POS = 0.70
-PESO_LOOKAHEAD = 0.35   # heading em rad (~±0.9): antecipa a curva
+PESO_LOOKAHEAD = 0.25   # heading em rad (~±0.9): antecipa a curva
+
+GIRO_MAX_FRAC = 0.85    # correção ≤ 85% da vel: diferença entre rodas nunca
+                        # passa de ~1.7x a velocidade -> nunca pivô acidental
+FRENO_CURVA_FRAC = 0.35 # freia no máx 35% (era 55%: freava demais e virava pivô)
+FILTRO_ERRO_ALFA = 0.55 # 0 = sem filtro; 0.5-0.6 mata ruído sem atrasar muito
+TRIM_ENCODER_MAX = 0.03 # teto do PID de encoders DURANTE a linha (ver abaixo)
 
 SENTIDO_CORRECAO = 1     # -1 se o teste de direção mostrar fugindo da linha
 ERRO_PERDIDA_GIRA = 0.40 # perdeu linha com erro >= isso: é curva, gira JÁ
