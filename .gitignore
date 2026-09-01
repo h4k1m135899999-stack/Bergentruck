@@ -1,3 +1,4 @@
 __pycache__/
 *.pyc
 enviar.ps1
+enviar.cmd
