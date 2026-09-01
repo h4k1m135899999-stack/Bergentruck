@@ -137,34 +137,34 @@ AVANCO_MAX_DESVIO_MM = 400.0
 TEMPO_MAX_DESVIO_S = 12.0
 
 # PID linha (ajustado para comportamento suave)
-KP_L = 0.006    # Reduzido de 0.01 (menos agressivo)
+KP_L = 0.004    # Reduzido de 0.01 (menos agressivo)
 KI_L = 0        # Mantido em 0
-KD_L = 0.0008   # Adicionado para amortecer oscilações
+KD_L = 0.0015   # Adicionado para amortecer oscilações
 
 # Pesos para erro combinado (posição + heading)
-PESO_ERRO_POS = 0.75    # Erro posicional continua dominante
-PESO_LOOKAHEAD = 0.15   # Heading com menos influência
+PESO_ERRO_POS = 0.70    # Erro posicional continua dominante
+PESO_LOOKAHEAD = 0.10   # Heading com menos influência
 
 # Limiares de erro para seguimento de linha (em porcentagem da largura da câmera)
-ERRO_LINHA_PEQUENO = 0.12      # Até 12%: correção suave
-ERRO_LINHA_MEDIO = 0.30        # Até 30%: correção moderada
-ERRO_LINHA_GRANDE = 0.65       # Até 65%: correção agressiva
-ERRO_LINHA_CRITICO = 0.80      # Acima de 80%: linha quase perdida
+ERRO_LINHA_PEQUENO = 0.20      # Até 12%: correção suave
+ERRO_LINHA_MEDIO = 0.45        # Até 30%: correção moderada
+ERRO_LINHA_GRANDE = 0.70       # Até 65%: correção agressiva
+ERRO_LINHA_CRITICO = 0.85      # Acima de 80%: linha quase perdida
 
 # Histerese para evitar oscilações entre modos
-HISTERESE_PIVOT = 0.15         # Reduz limiar de saída do pivot em 15%
+HISTERESE_PIVOT = 0.20         # Reduz limiar de saída do pivot em 15%
 
 # Velocidades base para cada modo
-VEL_CORRECAO_SUAVE = 0.95      # Multiplicador da velocidade em erro pequeno
-VEL_CORRECAO_AGRESSIVA = 0.70  # Multiplicador em erro médio
-VEL_PIVOT_MIN = 0.20           # Velocidade mínima do pivot
-VEL_PIVOT_MAX = 0.45           # Velocidade máxima do pivot
+VEL_CORRECAO_SUAVE = 1.00      # Multiplicador da velocidade em erro pequeno
+VEL_CORRECAO_AGRESSIVA = 0.80  # Multiplicador em erro médio
+VEL_PIVOT_MIN = 0.15           # Velocidade mínima do pivot
+VEL_PIVOT_MAX = 0.35           # Velocidade máxima do pivot
 
 # Limites de segurança
 VEL_MAX_MOTOR = 1.0            # Máximo absoluto
 VEL_MIN_MOTOR = 0.0            # Mínimo absoluto
 
 # Camera (vision_tuner / Vision)
-CAMERA_ID = 1
+CAMERA_ID = 0
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
