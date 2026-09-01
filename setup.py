@@ -145,6 +145,6 @@ SENTIDO_CORRECAO = 1     # -1 se o teste de direção mostrar fugindo da linha
 ERRO_PERDIDA_GIRA = 0.40 # perdeu linha com erro >= isso: é curva, gira JÁ
 
 # Camera (vision_tuner / Vision)
-CAMERA_ID = 1
+CAMERA_ID = 0
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
