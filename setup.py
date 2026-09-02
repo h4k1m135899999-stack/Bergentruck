@@ -148,7 +148,7 @@ FILTRO_ERRO_ALFA = 0.55 # 0 = sem filtro; 0.5-0.6 mata ruído sem atrasar muito
 TRIM_ENCODER_MAX = 0.03 # teto do PID de encoders DURANTE a linha (ver abaixo)
 
 SENTIDO_CORRECAO = 1     # -1 se o teste de direção mostrar fugindo da linha
-ERRO_PERDIDA_GIRA = 0.40 # perdeu linha com erro >= isso: é curva, gira JÁ
+ERRO_PERDIDA_GIRA = 0.40 # perdeu linha com erro >= isso: é curva. Gira JÁ
 
 # Camera (vision_tuner / Vision)
 CAMERA_ID = 0
