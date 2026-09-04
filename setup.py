@@ -134,7 +134,7 @@ TEMPO_MAX_DESVIO_S = 12.0
 
 # PID linha — escala real: erro combinado ~[-1, 1]; a correção precisa
 # chegar perto da velocidade base. KP=0.004 dava 0.0009 (0.6% da base).
-KP_L = 0.07        # comece aqui; suba se ainda cortar curva por fora
+KP_L = 0.1        # comece aqui; suba se ainda cortar curva por fora
 KI_L = 0.0
 KD_L = 0.05        # amortece; se tremer na reta, reduza
 
@@ -152,5 +152,5 @@ ERRO_PERDIDA_GIRA = 0.40 # perdeu linha com erro >= isso: é curva. Gira JÁ
 
 # Camera (vision_tuner / Vision)
 CAMERA_ID = 0
-FRAME_WIDTH = 640
-FRAME_HEIGHT = 480
+FRAME_WIDTH = 320
+FRAME_HEIGHT = 240
