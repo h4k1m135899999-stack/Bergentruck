@@ -156,23 +156,26 @@ class SeguirLinha(Estado):
             self.planner.mudar_estado(Stop)
 
 class IntersecaoComMarcacao(Estado):
-    """Interseção com marcação verde indicando a direção."""
-    
-    ID = EstadoID.INTERSECAO
+    ID = EstadoID.INTERSECAO_MARCADA  # ✅ CORRETO!
     
     def entrar(self):
-        self.planner.log("Interseção com marcação verde")
+        self.planner.log("🟢 Interseção com marcação verde")
         direcao = self.robo.direcao_marcacao_verde()
+        self.planner.log(f"Direção detectada: {direcao}")
+        
         if direcao == "left":
             graus = -90
         elif direcao == "right":
             graus = 90
         else:
             graus = 0  # Vai reto (padrão)
+        
+        self.planner.log(f"Girando {graus} graus")
         self.robo.iniciar_girar(graus)
     
     def executar(self):
         if self.robo.atualizar_movimento():
+            self.planner.log("Rotação concluída, voltando a seguir linha")
             self.planner.mudar_estado(SeguirLinha)
 
 class BecoSemSaida(Estado):
