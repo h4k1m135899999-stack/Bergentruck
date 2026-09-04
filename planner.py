@@ -149,11 +149,11 @@ class SeguirLinha(Estado):
 
             self.planner.mudar_estado(EntrarResgate)
             return
-
+        '''
         if evento == Evento.VERMELHO:
             self.planner.mudar_estado(Stop)
             return
-
+        '''
         if evento == Evento.OBSTACULO:
 
             self.planner.mudar_estado(Desviar)
