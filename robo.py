@@ -167,29 +167,28 @@ class Robo:
 
 
     def evento(self):
-
         # Eventos globais (maior prioridade)
-
         if self.tem_vermelho():
             return Evento.VERMELHO
         if self.tem_prata():
             return Evento.PRATA
-
         if self.tem_saida_resgate():
             return Evento.SAIDA_RESGATE
 
         # Eventos da sala de resgate
-
         if self.tem_vitima():
             return Evento.VITIMA
 
         # Eventos do percurso
-
         if self.tem_obstaculo() and self._frames_obstaculo >= setup.OBSTACULO_FRAMES_CONFIRMACAO:
             return Evento.OBSTACULO
 
-        if self.tem_intersecao():
-            return Evento.INTERSECAO
+        # NOVO: Detectar marcação verde (interseção ou beco sem saída)
+        if self.tem_marcacao_verde():
+            direcao = self.direcao_marcacao_verde()
+            if direcao == "both":
+                return Evento.BECO_SEM_SAIDA
+            return Evento.MARCADOR_VERDE
 
         if not self.tem_linha():
             return Evento.LINHA_PERDIDA
@@ -810,6 +809,22 @@ class Robo:
         self.set_motores(0.12 * lado, -0.12 * lado)
         return True
 
+    def tem_marcacao_verde(self):
+        """Verifica se há marcação verde antes da linha."""
+        return self.vision.green_marker.get("has_marker", False)
+
+    def direcao_marcacao_verde(self):
+        """Retorna a direção indicada pela marcação verde."""
+        marker = self.vision.green_marker
+        if not marker.get("has_marker", False):
+            return None
+        if marker.get("both", False):
+            return "both"  # Meia-volta (beco sem saída)
+        if marker.get("left", False):
+            return "left"
+        if marker.get("right", False):
+            return "right"
+        return None
 
     def centralizar_vitima(self, vel=setup.VEL_MED):
 
@@ -945,22 +960,16 @@ class Robo:
 
 
 class Evento(Enum):
-
     NENHUM = auto()
-
     OBSTACULO = auto()
-
-    INTERSECAO = auto()
-
+    INTERSECAO = auto()  # Com marcação verde
     PRATA = auto()
-
     LINHA_PERDIDA = auto()
-
     VERMELHO = auto()
-
     VITIMA = auto()
-
     SAIDA_RESGATE = auto()
+    MARCADOR_VERDE = auto()  # NOVO: para interseções com marcação
+    BECO_SEM_SAIDA = auto()  # NOVO: para beco sem saída
 
 
 class Curva(Enum):

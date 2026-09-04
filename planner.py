@@ -11,21 +11,15 @@ from desvio import DesvioInteligente
 
 
 class EstadoID(Enum):
-
     START = auto()
-
     SEGUIR_LINHA = auto()
-
     DESVIAR = auto()
-
     INTERSECAO = auto()
-
+    INTERSECAO_MARCADA = auto()  # NOVO
+    BECO_SEM_SAIDA = auto()      # NOVO
     ENTRAR_RESGATE = auto()
-
     RESGATE = auto()
-
     SAIR_RESGATE = auto()
-
     STOP = auto()
 
 
@@ -129,44 +123,70 @@ class Start(Estado):
 
 
 class SeguirLinha(Estado):
-
     ID = EstadoID.SEGUIR_LINHA
 
     def entrar(self):
-
         self.planner.log("Seguindo linha")
 
-    
     def executar(self):
-
         self.robo.seguir_linha()
         self.planner.telemetria_linha()
 
         evento = self.robo.evento()
 
-        '''
-        if evento == Evento.PRATA:
-
-            self.planner.mudar_estado(EntrarResgate)
+        # NOVO: Detectar marcação verde
+        if evento == Evento.MARCADOR_VERDE:
+            self.planner.mudar_estado(IntersecaoComMarcacao)
             return
-        '''
+        
+        if evento == Evento.BECO_SEM_SAIDA:
+            self.planner.mudar_estado(BecoSemSaida)
+            return
+
         if evento == Evento.VERMELHO:
             self.planner.mudar_estado(Stop)
             return
-        '''
-        if evento == Evento.OBSTACULO:
 
-            self.planner.mudar_estado(Desviar)
-            return
-        '''
-        if evento == Evento.INTERSECAO:
-
+        if evento == Evento.INTERSECAO:  # Mantido para compatibilidade
             self.planner.mudar_estado(Intersecao)
             return
 
         if evento == Evento.LINHA_PERDIDA and not self.robo.recuperar_linha():
             self.planner.log("Linha não recuperada dentro do limite")
             self.planner.mudar_estado(Stop)
+
+class IntersecaoComMarcacao(Estado):
+    """Interseção com marcação verde indicando a direção."""
+    
+    ID = EstadoID.INTERSECAO
+    
+    def entrar(self):
+        self.planner.log("Interseção com marcação verde")
+        direcao = self.robo.direcao_marcacao_verde()
+        if direcao == "left":
+            graus = -90
+        elif direcao == "right":
+            graus = 90
+        else:
+            graus = 0  # Vai reto (padrão)
+        self.robo.iniciar_girar(graus)
+    
+    def executar(self):
+        if self.robo.atualizar_movimento():
+            self.planner.mudar_estado(SeguirLinha)
+
+class BecoSemSaida(Estado):
+    """Beco sem saída (duas marcações verdes) - deve fazer meia-volta."""
+    
+    ID = EstadoID.BECO_SEM_SAIDA
+    
+    def entrar(self):
+        self.planner.log("Beco sem saída - fazendo meia-volta")
+        self.robo.iniciar_girar(180)  # Meia-volta
+    
+    def executar(self):
+        if self.robo.atualizar_movimento():
+            self.planner.mudar_estado(SeguirLinha)
 
 
 class Desviar(Estado):

@@ -157,6 +157,7 @@ class Vision:
             self.green_left = obj["green_left"]
             self.green_right = obj["green_right"]
             self.green_count = obj["green_count"]
+            self.green_marker = obj["green_marker"]
             self.red = obj["red"]
             self.silver = obj["silver"]
             self.silver_line = obj["silver_line"]

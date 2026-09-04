@@ -72,76 +72,43 @@ class ObjectDetector:
 
 
 
-    def detect(self,hsv):
-
-
+    def detect(self, hsv):
         black = self.detect_black(hsv)
-
         green = self.detect_green(hsv, black["y"])
-
         green_area = self.detect_destination_area(
             cv2.inRange(hsv, self.green_low, self.green_high)
         )
-
+        
+        # NOVO: Detecta marcação verde antes da linha
+        green_marker = self.detect_green_marker(hsv, black["y"])
+        
         red = self.detect_red(hsv)
-
         red_mask = cv2.bitwise_or(
             cv2.inRange(hsv, self.red_low1, self.red_high1),
             cv2.inRange(hsv, self.red_low2, self.red_high2),
         )
         red_area = self.detect_destination_area(red_mask)
-
         silver = self.detect_silver(hsv)
-
-        obstacle = self.detect_obstacle(
-            hsv
-        )
-
+        obstacle = self.detect_obstacle(hsv)
 
         return {
-
-
-            # verde
-
-            "green_left":
-                green["left"],
-
-            "green_right":
-                green["right"],
-
-            "green_count":
-                green["count"],
-
+            # Verde (curvas na pista)
+            "green_left": green["left"],
+            "green_right": green["right"],
+            "green_count": green["count"],
             "green_area": green_area,
-
+            
+            # NOVO: Marcação verde (interseções)
+            "green_marker": green_marker,
+            
             "red_area": red_area,
-
-
-
-            # fitas
-
-            "red":
-                red,
-
-            "silver":
-                silver["found"],
-
+            "red": red,
+            "silver": silver["found"],
             "silver_line": silver,
-
-            "black_exit":
-                black["found"],
-
+            "black_exit": black["found"],
             "black_exit_line": black,
-
-
-
-            # obstáculo
-
-            "obstacle":
-                obstacle["found"],
-
+            "obstacle": obstacle["found"],
             "obstacle_info": obstacle
-
         }
 
 
@@ -151,89 +118,98 @@ class ObjectDetector:
     # =====================================================
 
 
-    def detect_green(self, hsv, black_line_y):
+def detect_green(self, hsv, black_line_y):
+    """Detecta verde na pista (após a faixa preta) para identificar curvas."""
+    mask = cv2.inRange(hsv, self.green_low, self.green_high)
+    mask = self.clean(mask)
+    
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    h, w = mask.shape
+    center = w // 2
+    
+    left = False
+    right = False
+    
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area < 100:
+            continue
+        
+        M = cv2.moments(c)
+        if M["m00"] == 0:
+            continue
+        
+        x = int(M["m10"] / M["m00"])
+        y = int(M["m01"] / M["m00"])
+        
+        # Verde na pista (depois da faixa preta) - indica curva
+        if black_line_y is None or y <= black_line_y:
+            continue
+        
+        if x < center:
+            left = True
+        else:
+            right = True
+    
+    return {
+        "left": left,
+        "right": right,
+        "count": int(left) + int(right)
+    }
 
-
-        mask=cv2.inRange(
-            hsv,
-            self.green_low,
-            self.green_high
-        )
-
-
-        mask=self.clean(mask)
-
-
-
-        contours,_=cv2.findContours(
-            mask,
-            cv2.RETR_EXTERNAL,
-            cv2.CHAIN_APPROX_SIMPLE
-        )
-
-
-        h,w=mask.shape
-
-        center=w//2
-
-
-
-        left=False
-        right=False
-
-
-
+    def detect_green_marker(self, hsv, black_line_y):
+        """Detecta marcação verde antes da linha para indicar direção em interseções."""
+        mask = cv2.inRange(hsv, self.green_low, self.green_high)
+        mask = self.clean(mask)
+        
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        h, w = mask.shape
+        center = w // 2
+        
+        markers = []
+        
         for c in contours:
-
-
-            area=cv2.contourArea(c)
-
-
-            if area < 100:
+            area = cv2.contourArea(c)
+            # Marcação verde é pequena (2.5cm x 2.5cm)
+            if area < 50 or area > 500:
                 continue
-
-
-
-            M=cv2.moments(c)
-
-
-            if M["m00"]==0:
+            
+            M = cv2.moments(c)
+            if M["m00"] == 0:
                 continue
-
-
-            x=int(
-                M["m10"]/
-                M["m00"]
-            )
-
+            
+            x = int(M["m10"] / M["m00"])
             y = int(M["m01"] / M["m00"])
-
-            # No frame, valores maiores de y ficam mais perto do robô. Assim,
-            # o verde só é uma curva se for encontrado antes da faixa preta.
-            if black_line_y is None or y <= black_line_y:
+            
+            # Marcação verde ANTES da faixa preta (ou antes da linha)
+            if black_line_y is not None and y > black_line_y:
                 continue
-
-
-            if x<center:
-
-                left=True
-
-            else:
-
-                right=True
-
-
-
-        return {
-
-            "left":left,
-
-            "right":right,
-
-            "count":
-                int(left)+int(right)
-
+            
+            markers.append({"x": x, "y": y})
+        
+        # Analisa as marcações
+        result = {
+            "has_marker": len(markers) > 0,
+            "left": False,
+            "right": False,
+            "both": False
         }
+        
+        if markers:
+            # Verifica se tem marcações nos dois lados
+            left_markers = [m for m in markers if m["x"] < center]
+            right_markers = [m for m in markers if m["x"] > center]
+            
+            if left_markers and right_markers:
+                result["both"] = True
+            elif left_markers:
+                result["left"] = True
+            elif right_markers:
+                result["right"] = True
+        
+        return result
 
 
 
