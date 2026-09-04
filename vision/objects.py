@@ -19,11 +19,11 @@ class ObjectDetector:
         # verde
 
         self.green_low = np.array(
-            [50, 80, 80]
+            [50, 30, 70]
         )
 
         self.green_high = np.array(
-            [95, 145, 130]
+            [112, 200, 180]
         )
 
 
@@ -74,6 +74,9 @@ class ObjectDetector:
 
     def detect(self, hsv):
         black = self.detect_black(hsv)
+
+        print(f"Faixa preta encontrada: {black['found']}, y={black['y']}")
+
         green = self.detect_green(hsv, black["y"])
         green_area = self.detect_destination_area(
             cv2.inRange(hsv, self.green_low, self.green_high)
@@ -81,7 +84,10 @@ class ObjectDetector:
         
         # NOVO: Detecta marcação verde antes da linha
         green_marker = self.detect_green_marker(hsv, black["y"])
-        
+
+        if green_marker["has_marker"]:
+            print(f"⚠️ MARCADOR VERDE: left={green_marker['left']}, right={green_marker['right']}, both={green_marker['both']}")
+
         red = self.detect_red(hsv)
         red_mask = cv2.bitwise_or(
             cv2.inRange(hsv, self.red_low1, self.red_high1),
@@ -119,10 +125,9 @@ class ObjectDetector:
 
 
     def detect_green(self, hsv, black_line_y):
-        """Detecta verde na pista (após a faixa preta) para identificar curvas."""
+        """Verde na pista (curvas) - DEPOIS da faixa preta."""
         mask = cv2.inRange(hsv, self.green_low, self.green_high)
         mask = self.clean(mask)
-        
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         h, w = mask.shape
@@ -133,7 +138,7 @@ class ObjectDetector:
         
         for c in contours:
             area = cv2.contourArea(c)
-            if area < 100:
+            if area < 300:  # IGNORA PEQUENOS (marcações)
                 continue
             
             M = cv2.moments(c)
@@ -143,7 +148,7 @@ class ObjectDetector:
             x = int(M["m10"] / M["m00"])
             y = int(M["m01"] / M["m00"])
             
-            # Verde na pista (depois da faixa preta) - indica curva
+            # Só considera DEPOIS da faixa preta
             if black_line_y is None or y <= black_line_y:
                 continue
             
@@ -152,17 +157,12 @@ class ObjectDetector:
             else:
                 right = True
         
-        return {
-            "left": left,
-            "right": right,
-            "count": int(left) + int(right)
-        }
+        return {"left": left, "right": right, "count": int(left) + int(right)}
 
     def detect_green_marker(self, hsv, black_line_y):
-        """Detecta marcação verde antes da linha para indicar direção em interseções."""
+        """Marcação verde (interseções) - ANTES da faixa preta."""
         mask = cv2.inRange(hsv, self.green_low, self.green_high)
         mask = self.clean(mask)
-        
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         h, w = mask.shape
@@ -172,8 +172,8 @@ class ObjectDetector:
         
         for c in contours:
             area = cv2.contourArea(c)
-            # Marcação verde é pequena (2.5cm x 2.5cm)
-            if area < 50 or area > 500:
+            # Marcação é PEQUENA (2.5cm x 2.5cm)
+            if area < 50 or area > 400:
                 continue
             
             M = cv2.moments(c)
@@ -183,30 +183,30 @@ class ObjectDetector:
             x = int(M["m10"] / M["m00"])
             y = int(M["m01"] / M["m00"])
             
-            # Marcação verde ANTES da faixa preta (ou antes da linha)
-            if black_line_y is not None and y > black_line_y:
-                continue
+            # Só considera ANTES da faixa preta
+            # E PRÓXIMO ao robô (parte inferior da imagem)
+            if black_line_y is not None:
+                if y > black_line_y:  # Depois da faixa preta = curva
+                    continue
+            else:
+                # Sem faixa preta, só considera no terço inferior
+                if y < int(h * 0.6):
+                    continue
             
             markers.append({"x": x, "y": y})
         
-        # Analisa as marcações
-        result = {
-            "has_marker": len(markers) > 0,
-            "left": False,
-            "right": False,
-            "both": False
-        }
+        result = {"has_marker": len(markers) > 0, "left": False, "right": False, "both": False}
         
         if markers:
-            # Verifica se tem marcações nos dois lados
-            left_markers = [m for m in markers if m["x"] < center]
-            right_markers = [m for m in markers if m["x"] > center]
+            margin = 20
+            left = [m for m in markers if m["x"] < center - margin]
+            right = [m for m in markers if m["x"] > center + margin]
             
-            if left_markers and right_markers:
+            if left and right:
                 result["both"] = True
-            elif left_markers:
+            elif left:
                 result["left"] = True
-            elif right_markers:
+            elif right:
                 result["right"] = True
         
         return result
