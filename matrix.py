@@ -1,8 +1,11 @@
 from robo import Robo
+from time import sleep
 
 robo = Robo()
 
-robo.andar(10)
+def mover(x, y, z = 0):
+    robo.set_motores(x, y)
+    sleep(z)
 
 while True:
     robo.atualizar()
