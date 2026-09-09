@@ -5,17 +5,20 @@ import math
 
 robo = Robo()
 
-# Constantes de tempo (ajuste conforme necessário)
+# Constantes de tempo
 TEMPO_GIRO_ESQUERDA = 0.6
 TEMPO_MEIA_VOLTA = 1.5
 TEMPO_ALINHAR_LINHA = 4.0
-TEMPO_SEGUIR_LINHA = 10.0      # Aumentei o tempo máximo
+TEMPO_SEGUIR_LINHA = 10.0
 TEMPO_CAPTURA = 2.0
 TEMPO_DESPEJO = 2.0
 
-# ⭐ NOVAS CONSTANTES PARA GAPS/CURVAS
-FRAMES_SEM_LINHA_PARA_PERDER = 15   # Quantos frames sem linha antes de considerar perdida
-TEMPO_MINIMO_SEM_LINHA = 0.3        # Tempo mínimo sem linha antes de considerar perdida
+# ⭐ CONSTANTES PARA DETECÇÃO DE PERDA DE LINHA
+FRAMES_SEM_LINHA_PARA_PERDER = 8    # ⭐ REDUZIDO de 15 para 8
+TEMPO_MINIMO_SEM_LINHA = 0.15        # ⭐ REDUZIDO de 0.3 para 0.15
+
+# ⭐ NOVA CONSTANTE: Distância segura antes do obstáculo
+DISTANCIA_SEGURA_OBSTACULO_MM = 80.0  # Para a 8cm antes do obstáculo
 
 def mover(x, y, tempo=0):
     """Move os motores com velocidades x (esquerdo) e y (direito)"""
@@ -27,7 +30,7 @@ def parar(tempo=0):
     """Para o robô"""
     mover(0, 0)
     if tempo > 0:
-        sleep(tempo ) #oi bb
+        sleep(tempo)
 
 def girar(grau, tempo=0.6):
     """
@@ -41,11 +44,7 @@ def girar(grau, tempo=0.6):
         mover(-0.2, 0.2, tempo)
 
 def girar_ate_linha(direcao=1, tempo_max=3.0):
-    """
-    Gira até encontrar a linha.
-    direcao = 1: esquerda, direcao = -1: direita
-    Retorna True se encontrou a linha, False se timeout
-    """
+    """Gira até encontrar a linha."""
     inicio = time.monotonic()
     while time.monotonic() - inicio < tempo_max:
         robo.atualizar()
@@ -83,21 +82,42 @@ def alinhar_com_linha(tempo_max=3.0):
     parar()
     return False
 
-# ⭐ FUNÇÃO MELHORADA: Segue linha até PERDER REALMENTE
+# ⭐ FUNÇÃO CORRIGIDA: Detecta obstáculo E perda de linha
 def seguir_linha_ate_perder(tempo_max=12.0):
     """
-    Segue a linha até PERDER REALMENTE (não apenas gaps/curvas).
-    Usa contador de frames sem linha para evitar paradas prematuras.
-    Retorna True se perdeu a linha, False se timeout
+    Segue a linha até:
+    - Perder a linha (detectado mais rápido)
+    - Encontrar um obstáculo (caixa de bombom)
+    - Timeout
     """
     inicio = time.monotonic()
     frames_sem_linha = 0
     inicio_sem_linha = None
+    frames_obstaculo = 0
+    
+    print("   🛑 Monitorando: linha, obstáculos...")
     
     while time.monotonic() - inicio < tempo_max:
         robo.atualizar()
         
-        # Verifica se tem linha
+        # ⭐ PRIORIDADE 1: Detectar obstáculo (caixa de bombom)
+        if robo.tem_obstaculo():
+            frames_obstaculo += 1
+            
+            # Confirma obstáculo após alguns frames
+            if frames_obstaculo >= 2:
+                print("🎯 OBSTÁCULO DETECTADO! Parando...")
+                parar(0.1)
+                
+                # ⭐ Tenta recuar um pouco para não encostar
+                mover(-0.2, -0.2, 0.2)
+                parar(0.1)
+                
+                return False  # Retorna False indicando que parou por obstáculo
+        else:
+            frames_obstaculo = 0
+        
+        # ⭐ PRIORIDADE 2: Verificar se tem linha
         if robo.tem_linha():
             # Reset dos contadores se a linha voltou
             frames_sem_linha = 0
@@ -105,30 +125,27 @@ def seguir_linha_ate_perder(tempo_max=12.0):
             robo.seguir_linha()
             
         else:
-            # Não tem linha - conta os frames
+            # Não tem linha - conta os frames (AGORA MAIS RÁPIDO)
             frames_sem_linha += 1
             if inicio_sem_linha is None:
                 inicio_sem_linha = time.monotonic()
             
-            # ⭐ SÓ PERDE QUANDO FICA MUITO TEMPO SEM LINHA
+            # ⭐ PERDE MAIS RÁPIDO: 8 frames ou 0.15s
             if frames_sem_linha >= FRAMES_SEM_LINHA_PARA_PERDER or \
                (inicio_sem_linha and time.monotonic() - inicio_sem_linha > TEMPO_MINIMO_SEM_LINHA):
-                print(f"⚠️ Perdeu linha! {frames_sem_linha} frames sem linha, {time.monotonic() - inicio_sem_linha:.2f}s")
+                print(f"⚠️ Perdeu linha! {frames_sem_linha} frames sem linha")
                 parar(0.1)
                 return True
             
-            # Ainda não perdeu - continua tentando encontrar
-            # ⭐ Usa o último erro conhecido para continuar seguindo
+            # Ainda não perdeu - tenta encontrar
             if hasattr(robo, '_ultimo_erro_linha'):
                 erro = robo._ultimo_erro_linha
-                if abs(erro) >= 0.4:  # Curva fechada
-                    # Gira na direção da curva
+                if abs(erro) >= 0.4:
                     if erro > 0:
                         robo.set_motores(0.12, -0.12)
                     else:
                         robo.set_motores(-0.12, 0.12)
                 else:
-                    # Gap pequeno - continua reto
                     robo.set_motores(0.15, 0.15)
             else:
                 robo.set_motores(0.12, 0.12)
@@ -136,6 +153,44 @@ def seguir_linha_ate_perder(tempo_max=12.0):
         sleep(0.02)
     
     print("⚠️ Timeout: não perdeu a linha a tempo!")
+    parar()
+    return False
+
+# ⭐ NOVA FUNÇÃO: Segue linha até encontrar obstáculo
+def seguir_ate_obstaculo(tempo_max=10.0):
+    """
+    Segue a linha até encontrar um obstáculo (caixa de bombom).
+    Retorna True se encontrou obstáculo, False se perdeu a linha ou timeout.
+    """
+    inicio = time.monotonic()
+    frames_obstaculo = 0
+    
+    print("   🎯 Seguindo até encontrar caixa de bombom...")
+    
+    while time.monotonic() - inicio < tempo_max:
+        robo.atualizar()
+        
+        # ⭐ Detecta obstáculo
+        if robo.tem_obstaculo():
+            frames_obstaculo += 1
+            if frames_obstaculo >= 2:
+                print("✅ OBSTÁCULO ENCONTRADO!")
+                parar(0.1)
+                return True
+        else:
+            frames_obstaculo = 0
+        
+        # Se perdeu a linha, algo deu errado
+        if not robo.tem_linha():
+            print("⚠️ Perdeu a linha antes do obstáculo!")
+            parar(0.1)
+            return False
+        
+        # Continua seguindo a linha
+        robo.seguir_linha()
+        sleep(0.02)
+    
+    print("⏰ Timeout procurando obstáculo!")
     parar()
     return False
 
@@ -151,56 +206,22 @@ def meia_volta_e_alinhar(tempo_giro=1.2, tempo_alinhar=3.0):
     
     return False
 
-# ⭐ NOVA FUNÇÃO: Verifica se o robô realmente está pronto para capturar
-def esperar_vitima_ou_linha(tempo_max=8.0):
-    """
-    Espera até encontrar uma vítima OU perder a linha.
-    Usado para garantir que o robô chegue até a vítima.
-    """
-    inicio = time.monotonic()
-    while time.monotonic() - inicio < tempo_max:
-        robo.atualizar()
-        
-        # Se encontrou vítima - captura!
-        if robo.tem_vitima():
-            print("🎯 Vítima encontrada!")
-            return "vitima"
-        
-        # Se perdeu a linha - algo deu errado
-        if not robo.tem_linha():
-            print("⚠️ Perdeu a linha antes de encontrar a vítima!")
-            return "linha_perdida"
-        
-        # Continua seguindo a linha
-        robo.seguir_linha()
-        sleep(0.02)
-    
-    print("⏰ Timeout esperando vítima!")
-    return "timeout"
-
 def executar_captura():
     """Executa a sequência de captura da vítima"""
     print("🔄 Iniciando CAPTURA...")
     
-    # ⭐ ANTES DE CAPTURAR: espera encontrar a vítima ou a linha
-    resultado = esperar_vitima_ou_linha(6.0)
+    print("📦 Pegando a caixa de bombom...")
+    # ⭐ Movimento para pegar a caixa
+    robo.garra("open")
+    robo.alavanca("down")
+    sleep(0.5)
+    robo.garra("closed")
+    sleep(0.5)
+    robo.alavanca("up")
+    robo.garra("open")
     
-    if resultado == "vitima":
-        # Centraliza e captura
-        print("🎯 Centralizando na vítima...")
-        inicio = time.monotonic()
-        while time.monotonic() - inicio < 3.0 and robo.tem_vitima():
-            robo.atualizar()
-            if robo.centralizar_vitima():
-                break
-            sleep(0.02)
-        
-        robo.capturar_vitima()
-        print("✅ Captura finalizada!")
-        return True
-    else:
-        print("❌ Não encontrou vítima! Pulando captura...")
-        return False
+    print("✅ Captura finalizada!")
+    return True
 
 def executar_despejo():
     """Executa a sequência de despejo da vítima"""
@@ -208,18 +229,10 @@ def executar_despejo():
     robo.entregar_vitima()
     print("✅ Despejo finalizado!")
 
-# ⭐ FUNÇÃO MELHORADA: Ciclo completo com verificação
+# ⭐ FUNÇÃO PRINCIPAL CORRIGIDA
 def executar_ciclo_completo():
     """
-    Executa o ciclo completo:
-    1. Anda pra frente
-    2. Gira pra esquerda até alinhar com a linha
-    3. Segue linha até perder (realmente)
-    4. Meia volta e alinha
-    5. Modo CAPTURA (com verificação)
-    6. Segue linha até perder
-    7. Meia volta e alinha
-    8. Modo DESPEJO
+    Ciclo completo com detecção de obstáculo.
     """
     
     print("🚀 Iniciando ciclo completo!")
@@ -238,71 +251,68 @@ def executar_ciclo_completo():
     alinhar_com_linha(TEMPO_ALINHAR_LINHA)
     parar(0.2)
     
-    # ===== PASSO 3: Seguir linha até PERDER REALMENTE =====
-    print("📌 PASSO 3: Seguindo linha até perder...")
-    print("   ⚠️ Ignorando gaps/curvas curtas (< 15 frames)...")
+    # ===== PASSO 3: Seguir linha até PERDER ou OBSTÁCULO =====
+    print("📌 PASSO 3: Seguindo linha...")
+    print("   🔍 Procurando: perda de linha OU obstáculo")
     
-    linha_perdida = seguir_linha_ate_perder(TEMPO_SEGUIR_LINHA)
-    if not linha_perdida:
-        print("⚠️ Timeout: não perdeu a linha a tempo! Forçando parada...")
-    parar(0.3)
+    # ⭐ USA A NOVA FUNÇÃO QUE DETECTA OBSTÁCULO
+    resultado = seguir_linha_ate_perder(TEMPO_SEGUIR_LINHA)
     
-    # ⭐ Debug: mostra onde o robô está
-    print(f"📍 Posição: x={robo.x:.1f}, y={robo.y:.1f}")
-    
-    # ===== PASSO 4: Meia volta e alinhar =====
-    print("📌 PASSO 4: Meia volta e alinhando...")
-    mover(-0.5, -0.4, 0.3)
-    mover(-0.25, 0.2, 1.2)
-    '''
-    if not meia_volta_e_alinhar(TEMPO_MEIA_VOLTA, TEMPO_ALINHAR_LINHA):
-        print("⚠️ Não conseguiu alinhar após meia volta!")
-    '''
-    parar(0.2)
-    
-    # ===== PASSO 5: Modo CAPTURA (com verificação) =====
-    print("📌 PASSO 5: Modo CAPTURA...")
-    print("   🎯 Aguardando vítima ou linha...")
-    #ativar depois
-
-    
-    #capturou = executar_captura()
-    #if not capturou:
-    #    print("⚠️ Captura não realizada! Continuando...")
-    parar(0.3)
-    
-    # ===== PASSO 6: Seguir linha até perder novamente =====
-    print("📌 PASSO 6: Seguindo linha até perder (2ª vez)...")
-    linha_perdida = seguir_linha_ate_perder(TEMPO_SEGUIR_LINHA)
-    if not linha_perdida:
-        print("⚠️ Timeout: não perdeu a linha a tempo! Forçando parada...")
-    parar(0.3)
+    if resultado is None:
+        print("⚠️ Tempo esgotado!")
+        parar()
+        return
     
     print(f"📍 Posição: x={robo.x:.1f}, y={robo.y:.1f}")
     
-    # ===== PASSO 7: Meia volta e alinhar =====
-    print("📌 PASSO 7: Meia volta e alinhando (2ª vez)...")
-    if not meia_volta_e_alinhar(TEMPO_MEIA_VOLTA, TEMPO_ALINHAR_LINHA):
-        print("⚠️ Não conseguiu alinhar após meia volta!")
-    parar(0.2)
-    
-    # ===== PASSO 8: Modo DESPEJO =====
-    print("📌 PASSO 8: Modo DESPEJO...")
-    executar_despejo()
-    parar(0.3)
+    # ⭐ Se parou por obstáculo, faz a captura
+    if not resultado:  # False = parou por obstáculo
+        print("📌 OBSTÁCULO DETECTADO - Iniciando captura!")
+        
+        # ===== PASSO 4: Captura =====
+        print("📌 PASSO 4: Capturando caixa de bombom...")
+        executar_captura()
+        parar(0.3)
+        
+        # ===== PASSO 5: Meia volta =====
+        print("📌 PASSO 5: Meia volta após captura...")
+        mover(-0.3, -0.3, 0.3)  # Recua um pouco
+        meia_volta_e_alinhar(TEMPO_MEIA_VOLTA, TEMPO_ALINHAR_LINHA)
+        parar(0.2)
+        
+        # ===== PASSO 6: Voltar seguindo linha =====
+        print("📌 PASSO 6: Voltando pela linha...")
+        linha_perdida = seguir_linha_ate_perder(TEMPO_SEGUIR_LINHA)
+        parar(0.3)
+        
+        # ===== PASSO 7: Meia volta e despejo =====
+        print("📌 PASSO 7: Meia volta para despejo...")
+        mover(-0.3, -0.3, 0.3)
+        meia_volta_e_alinhar(TEMPO_MEIA_VOLTA, TEMPO_ALINHAR_LINHA)
+        parar(0.2)
+        
+        # ===== PASSO 8: Despejo =====
+        print("📌 PASSO 8: Despejando...")
+        executar_despejo()
+        
+    else:
+        print("⚠️ Perdeu a linha antes do obstáculo!")
+        # Tenta se recuperar
     
     print("✅ Ciclo completo finalizado!")
     parar()
 
-# ⭐ NOVA FUNÇÃO: Verifica se a linha está realmente perdida
-def diagnosticar_linha():
-    """Função de diagnóstico para ver o estado da linha"""
-    robo.atualizar()
-    print(f"Linha encontrada: {robo.tem_linha()}")
-    print(f"Erro: {robo.erro_linha}")
-    print(f"Heading: {math.degrees(robo.heading):.1f}°")
-    if hasattr(robo, '_frames_sem_linha'):
-        print(f"Frames sem linha: {robo._frames_sem_linha}")
+# ⭐ FUNÇÃO DE TESTE: Mostra se está vendo obstáculo
+def testar_deteccao():
+    """Testa se o robô está detectando o obstáculo (caixa de bombom)"""
+    print("🧪 Testando detecção de obstáculo...")
+    for _ in range(50):
+        robo.atualizar()
+        if robo.tem_obstaculo():
+            print(f"✅ OBSTÁCULO DETECTADO! BBox: {robo.obstacle_bbox}")
+        else:
+            print("❌ Sem obstáculo")
+        sleep(0.1)
 
 # ===== EXECUÇÃO PRINCIPAL =====
 if __name__ == "__main__":
