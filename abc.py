@@ -8,7 +8,7 @@ robo = Robo()
 # Constantes de tempo (ajuste conforme necessário)
 TEMPO_GIRO_ESQUERDA = 0.6
 TEMPO_MEIA_VOLTA = 1.5
-TEMPO_ALINHAR_LINHA = 6.0
+TEMPO_ALINHAR_LINHA = 4.0
 TEMPO_SEGUIR_LINHA = 10.0      # Aumentei o tempo máximo
 TEMPO_CAPTURA = 2.0
 TEMPO_DESPEJO = 2.0
