@@ -226,7 +226,7 @@ def executar_ciclo_completo():
     
     # ===== PASSO 1: Andar pra frente =====
     print("📌 PASSO 1: Andando pra frente...")
-    mover(0.5, 0.4, 1.0)
+    mover(0.4, 0.4, 0.95)
     parar(0.2)
     
     # ===== PASSO 2: Girar até alinhar com a linha =====
@@ -264,6 +264,8 @@ def executar_ciclo_completo():
     print("📌 PASSO 5: Modo CAPTURA...")
     print("   🎯 Aguardando vítima ou linha...")
     #ativar depois
+
+    
     #capturou = executar_captura()
     #if not capturou:
     #    print("⚠️ Captura não realizada! Continuando...")
