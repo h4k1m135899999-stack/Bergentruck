@@ -12,10 +12,10 @@ while True:
     sleep(0.5)
     '''
     servo_lift.min()
-    sleep(0.5)
+    sleep(2)
 
     servo_lift.max()
-    sleep(0.5)
+    sleep(2)
     ''' 
     servo_dump.min()
     sleep(0.5)
