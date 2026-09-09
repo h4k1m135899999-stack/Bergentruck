@@ -5,5 +5,5 @@ from setup import servo_claw, servo_lift, servo_dump
 
 #servo_claw.min() #Braço inteiro
 
-servo_lift.min()
+servo_lift.max()
 #servo_dump.max()
