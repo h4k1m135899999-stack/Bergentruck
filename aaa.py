@@ -24,6 +24,6 @@ while True:
     sleep(0.5)
     '''
 
-#servo_claw.min() #Braço inteiro
+#servo_claw.min() #
 #servo_lift.max() #rotação
-#servo_dump.max() #abrir e fechar
+#servo_dump.max() #abrir 
