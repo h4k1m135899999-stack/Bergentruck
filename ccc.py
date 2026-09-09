@@ -157,9 +157,9 @@ def girar_ate_linha(direcao=1, tempo_max=3.0):
             parar(0.1)
             return True
         if direcao == 1:
-            robo.set_motores(-0.25, 0.15)
+            robo.set_motores(-0.15, 0.15)
         else:
-            robo.set_motores(0.25, -0.15)
+            robo.set_motores(0.15, -0.15)
         sleep(0.02)
     parar()
     return False
