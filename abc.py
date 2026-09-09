@@ -27,7 +27,7 @@ def parar(tempo=0):
     """Para o robô"""
     mover(0, 0)
     if tempo > 0:
-        sleep(tempo)
+        sleep(tempo ) #oi bb
 
 def girar(grau, tempo=0.6):
     """
