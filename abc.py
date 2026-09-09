@@ -7,8 +7,8 @@ robo = Robo()
 
 # Constantes de tempo (ajuste conforme necessário)
 TEMPO_GIRO_ESQUERDA = 0.6
-TEMPO_MEIA_VOLTA = 1.2
-TEMPO_ALINHAR_LINHA = 3.0
+TEMPO_MEIA_VOLTA = 1.5
+TEMPO_ALINHAR_LINHA = 6.0
 TEMPO_SEGUIR_LINHA = 10.0      # Aumentei o tempo máximo
 TEMPO_CAPTURA = 2.0
 TEMPO_DESPEJO = 2.0
@@ -53,9 +53,9 @@ def girar_ate_linha(direcao=1, tempo_max=3.0):
             parar(0.1)
             return True
         if direcao == 1:
-            robo.set_motores(-0.15, 0.15)
+            robo.set_motores(-0.25, 0.15)
         else:
-            robo.set_motores(0.15, -0.15)
+            robo.set_motores(0.25, -0.15)
         sleep(0.02)
     parar()
     return False
@@ -226,7 +226,7 @@ def executar_ciclo_completo():
     
     # ===== PASSO 1: Andar pra frente =====
     print("📌 PASSO 1: Andando pra frente...")
-    mover(0.4, 0.4, 1.0)
+    mover(0.5, 0.4, 1.0)
     parar(0.2)
     
     # ===== PASSO 2: Girar até alinhar com a linha =====
@@ -252,17 +252,21 @@ def executar_ciclo_completo():
     
     # ===== PASSO 4: Meia volta e alinhar =====
     print("📌 PASSO 4: Meia volta e alinhando...")
+    mover(-0.5, -0.4, 0.3)
+    mover(-0.25, 0.2, 1.2)
+    '''
     if not meia_volta_e_alinhar(TEMPO_MEIA_VOLTA, TEMPO_ALINHAR_LINHA):
         print("⚠️ Não conseguiu alinhar após meia volta!")
+    '''
     parar(0.2)
     
     # ===== PASSO 5: Modo CAPTURA (com verificação) =====
     print("📌 PASSO 5: Modo CAPTURA...")
     print("   🎯 Aguardando vítima ou linha...")
-    
-    capturou = executar_captura()
-    if not capturou:
-        print("⚠️ Captura não realizada! Continuando...")
+    #ativar depois
+    #capturou = executar_captura()
+    #if not capturou:
+    #    print("⚠️ Captura não realizada! Continuando...")
     parar(0.3)
     
     # ===== PASSO 6: Seguir linha até perder novamente =====

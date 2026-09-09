@@ -21,7 +21,7 @@ while True:
 
     #robo.girar(90)
 
-    mover(-0.2, 0.2, 0.6)
+    mover(-0.25, 0.2, 1.2)
     parar(1)
 
     #robo.tras(0.3)
