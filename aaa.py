@@ -4,7 +4,7 @@ from time import sleep
 
 #executar_captura()
 while True:
-    
+    '''
     servo_claw.min()
     sleep(0.5)
 
@@ -16,7 +16,7 @@ while True:
 
     servo_lift.max()
     sleep(2)
-     
+    ''' 
     servo_dump.min()
     sleep(0.5)
 
@@ -24,6 +24,6 @@ while True:
     sleep(0.5)
     '''
 
-#servo_claw.min() #
-#servo_lift.max() #rotação
+#servo_claw.min() #rotação
+#servo_lift.max() #
 #servo_dump.max() #abrir 
