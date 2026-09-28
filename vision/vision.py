@@ -48,10 +48,9 @@ class Vision:
         if self.resize_needed:
             frame = cv2.resize(frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
 
-        # Processa a imagem em tons de cinza, suficiente para a faixa preta e
-        # mais barato que converter cada frame para HSV.
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        result = self.line.detect(gray)
+        # Keep the previous HSV line segmentation while processing only the line.
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        result = self.line.detect(hsv)
         self.frame = frame
         self.line_found = result["found"]
         self.center_error = result["error"]

@@ -17,9 +17,14 @@ class Robo:
         self.encoderR = Encoder(setup.encoderR_a, setup.encoderR_b)
         self.odom = Odometria(setup.RAIO_RODA, setup.DISTANCIA_RODAS, setup.PULSOS_VOLTA)
         self.vision = Vision()
+        self._pid_encoder = PID(setup.KP_E, setup.KI_E, setup.KD_E,
+                                output_limits=(-0.35, 0.35), integral_limits=(-50, 50))
         self._pid_linha = PID(setup.KP_L, setup.KI_L, setup.KD_L,
-                              output_limits=(-1.0, 1.0), integral_limits=(-2, 2))
+                              output_limits=(-0.45, 0.45), integral_limits=(-2, 2))
         self._last_control = time.monotonic()
+        self._last_encoder_control = time.monotonic()
+        self._encoder_left_previous = self.encoderL.ler()
+        self._encoder_right_previous = self.encoderR.ler()
         self._last_error = 0.0
         self._filtered_error = None
         self._lost_frames = 0
@@ -102,12 +107,28 @@ class Robo:
         correction = max(-setup.GIRO_MAX_FRAC * vel, min(setup.GIRO_MAX_FRAC * vel, correction))
         curve_brake = 1.0 - setup.FRENO_CURVA_FRAC * min(1.0, abs(self._filtered_error))
         base = vel * curve_brake
+        base_left, base_right = self._encoder_trim(base)
         # Permite a roda interna desacelerar e até inverter em curvas agudas.
         floor = -setup.GIRO_REVERSO_MAX_FRAC * vel
-        left = max(floor, min(1.0, base + setup.SENTIDO_CORRECAO * correction))
-        right = max(floor, min(1.0, base - setup.SENTIDO_CORRECAO * correction))
+        left = max(floor, min(1.0, base_left + setup.SENTIDO_CORRECAO * correction))
+        right = max(floor, min(1.0, base_right - setup.SENTIDO_CORRECAO * correction))
         self.set_motores(left, right)
         return True
+
+    def _encoder_trim(self, base):
+        now = time.monotonic()
+        dt = now - self._last_encoder_control
+        self._last_encoder_control = now
+        left_count = self.encoderL.ler()
+        right_count = self.encoderR.ler()
+        left_delta = left_count - self._encoder_left_previous
+        right_delta = right_count - self._encoder_right_previous
+        self._encoder_left_previous = left_count
+        self._encoder_right_previous = right_count
+        speed_error = (left_delta - right_delta) / dt if dt > 0 else 0.0
+        trim = self._pid_encoder.atualizar(speed_error, dt)
+        trim = max(-setup.TRIM_ENCODER_MAX, min(setup.TRIM_ENCODER_MAX, trim))
+        return max(0.0, base - trim), max(0.0, base + trim)
 
     def recuperar_linha(self):
         if self._lost_since is None:

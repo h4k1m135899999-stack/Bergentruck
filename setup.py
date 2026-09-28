@@ -22,18 +22,24 @@ RAIO_RODA = 32.5
 DISTANCIA_RODAS = 180
 PULSOS_VOLTA = 550
 
-VEL_MED = 0.22
+VEL_MED = 0.18
+
+# Small encoder trim compensates left/right motor mismatch on straights.
+KP_E = 0.001
+KI_E = 0.0
+KD_E = 0.0
+TRIM_ENCODER_MAX = 0.03
 
 # Controle de linha: erro combinado normalizado entre aproximadamente -1 e 1.
-KP_L = 0.18
+KP_L = 0.10
 KI_L = 0.0
-KD_L = 0.04
+KD_L = 0.05
 PESO_ERRO_POS = 0.70
-PESO_LOOKAHEAD = 0.38
-GIRO_MAX_FRAC = 1.20
-GIRO_REVERSO_MAX_FRAC = 0.35
-FRENO_CURVA_FRAC = 0.18
-FILTRO_ERRO_ALFA = 0.72
+PESO_LOOKAHEAD = 0.25
+GIRO_MAX_FRAC = 0.95
+GIRO_REVERSO_MAX_FRAC = 0.25
+FRENO_CURVA_FRAC = 0.30
+FILTRO_ERRO_ALFA = 0.55
 SENTIDO_CORRECAO = 1  # Mude para -1 se o teste físico mostrar correção invertida.
 ERRO_PERDIDA_GIRA = 0.40
 
