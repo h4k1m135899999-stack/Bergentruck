@@ -11,17 +11,33 @@ class LineDetector:
 
         # ajustar depois
 
-        self.threshold = 80
+        self.low = np.array(
+            [0,0,0]
+        )
+
+        self.high = np.array(
+            [180,255,80]
+        )
         self.last_center = None
         self.missed_frames = 0
 
 
 
-    def detect(self, gray):
-        # Gray input keeps the camera loop inexpensive. A small opening removes
-        # isolated dark pixels without erasing the narrow line on low resolution.
-        mask = cv2.threshold(gray, self.threshold, 255, cv2.THRESH_BINARY_INV)[1]
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    def detect(self,hsv):
+
+
+        mask = cv2.inRange(
+            hsv,
+            self.low,
+            self.high
+        )
+
+
+        mask = cv2.morphologyEx(
+            mask,
+            cv2.MORPH_OPEN,
+            np.ones((5,5),np.uint8)
+        )
 
 
         contour = self.get_contour(mask)
@@ -172,7 +188,7 @@ class LineDetector:
         pts=[]
 
 
-        rows=[0.88,0.74,0.60,0.46,0.32]
+        rows=[0.85,0.70,0.55,0.40]
 
 
         data=contour[:,0,:]
@@ -183,7 +199,9 @@ class LineDetector:
             y=int(h*r)
 
 
-            near=data[abs(data[:,1]-y)<max(5, int(h * 0.07))]
+            near=data[
+                abs(data[:,1]-y)<10
+            ]
 
 
             if len(near)>0:
