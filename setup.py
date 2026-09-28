@@ -27,7 +27,7 @@ VEL_MED = 0.22
 # Controle de linha: erro combinado normalizado entre aproximadamente -1 e 1.
 KP_L = 0.18
 KI_L = 0.0
-KD_L = 0.03
+KD_L = 0.04
 PESO_ERRO_POS = 0.70
 PESO_LOOKAHEAD = 0.38
 GIRO_MAX_FRAC = 1.20
