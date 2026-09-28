@@ -25,7 +25,7 @@ PULSOS_VOLTA = 550
 VEL_MED = 0.22
 
 # Controle de linha: erro combinado normalizado entre aproximadamente -1 e 1.
-KP_L = 0.2
+KP_L = 0.3
 KI_L = 0.0
 KD_L = 0.0
 PESO_ERRO_POS = 0.70
