@@ -137,7 +137,7 @@ def seguir_linha_ate_perder(tempo_max=10.0):
     return False
 
 # ⭐ FUNÇÃO SIMPLES: Meia volta e alinha
-def meia_volta_e_alinhar(tempo_giro=1.2, tempo_alinhar=4.0):
+def meia_volta_e_alinhar(tempo_giro=1.1, tempo_alinhar=4.0):
     """Dá meia volta e depois se alinha com a linha."""
     print("🔄 Dando meia volta...")
     
