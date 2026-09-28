@@ -31,7 +31,7 @@ KD_E = 0.0
 TRIM_ENCODER_MAX = 0.03
 
 # Controle de linha: erro combinado normalizado entre aproximadamente -1 e 1.
-KP_L = 0.10
+KP_L = 0.20
 KI_L = 0.0
 KD_L = 0.05
 PESO_ERRO_POS = 0.70
